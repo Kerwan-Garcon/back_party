@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int                  @id @default(autoincrement())
+  email            String               @unique
+  password         String
+  name             String
+  region           String
+  city             String
+  age              Int
+  interests        String[]
+  isOrganizer      Boolean              @default(false)
+  ratingsGiven     UserRating[]         @relation("UserRatingsGiven")
+  ratingsReceived  UserRating[]         @relation("UserRatingsReceived")
+  events           Event[]              @relation("OrganizerEvents")
+  participations   EventParticipation[]
+  messagesSent     Message[]            @relation("SenderMessages")
+  messagesReceived Message[]            @relation("ReceiverMessages")
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([email])
+  @@index([region, city])
+}
+
+model Event {
+  id               Int                  @id @default(autoincrement())
+  name             String
+  location         String
+  type             EventType
+  date             DateTime
+  time             DateTime
+  remainingSpots   Int
+  description      String
+  isPaid           Boolean
+  price            Float?
+  isPublished      Boolean              @default(false)
+  bringDrinks      Boolean              @default(false)
+  bringGames       Boolean              @default(false)
+  bringEquipment   Boolean              @default(false)
+  equipmentDetails String?
+  organizerId      Int
+  organizer        User                 @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  participants     EventParticipation[]
+  messages         Message[]
+  games            Game[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([location])
+  @@index([type])
+  @@index([date])
+  @@index([organizerId])
+}
+
+model EventParticipation {
+  id            Int                 @id @default(autoincrement())
+  userId        Int
+  eventId       Int
+  status        ParticipationStatus
+  paymentStatus PaymentStatus
+  user          User                @relation(fields: [userId], references: [id])
+  event         Event               @relation(fields: [eventId], references: [id])
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+}
+
+model UserRating {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  raterId   Int
+  ratedId   Int
+  createdAt DateTime @default(now())
+
+  rater User @relation("UserRatingsGiven", fields: [raterId], references: [id])
+  rated User @relation("UserRatingsReceived", fields: [ratedId], references: [id])
+
+  @@unique([raterId, ratedId])
+  @@index([raterId])
+  @@index([ratedId])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  senderId   Int
+  receiverId Int
+  eventId    Int
+  sender     User     @relation("SenderMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceiverMessages", fields: [receiverId], references: [id])
+  event      Event    @relation(fields: [eventId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([eventId])
+}
+
+model Game {
+  id      Int    @id @default(autoincrement())
+  name    String
+  eventId Int
+  event   Event  @relation(fields: [eventId], references: [id])
+
+  @@index([eventId])
+}
+
+enum EventType {
+  BOARD_GAME
+  VIDEO_GAME
+  PARTY
+}
+
+enum ParticipationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  NONE
+}
