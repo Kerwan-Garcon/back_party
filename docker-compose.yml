@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+  database:
+    image: postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: party
+      POSTGRES_PASSWORD: party
+      POSTGRES_DB: party
+      TZ: Europe/Paris
+      PGTZ: Europe/Paris
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    ports:
+      - '8080:8080'
+    depends_on:
+      - database
+
+volumes:
+  postgres-data: {}

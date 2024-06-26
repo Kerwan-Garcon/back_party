@@ -8,21 +8,47 @@ import { EventService } from './services/event.service';
 import { EventController } from './controller/event.controller';
 import { EventParticipationController } from './controller/eventParticipation.controller';
 import { EventParticipationService } from './services/eventParticipation.service';
-import { LoginService } from './services/login.service';
+import { AuthService } from './services/auth.service';
 import { RatingController } from './controller/rating.controller';
 import { RatingService } from './services/rating.service';
 import { MessageController } from './controller/message.controller';
 import { MessageService } from './services/message.service';
+import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './strategy/jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthController } from './controller/auth.controller';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { JwtAuthGuard } from './guards/jwt.guards';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [],
+  imports: [
+    PassportModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '30d' }
+      }),
+      inject: [ConfigService]
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true
+    }),
+    CacheModule.register({
+      ttl: 10000,
+      max: 20
+    })
+  ],
   controllers: [
     AppController,
     UsersController,
     EventController,
     EventParticipationController,
     RatingController,
-    MessageController
+    MessageController,
+    AuthController
   ],
   providers: [
     AppService,
@@ -30,9 +56,19 @@ import { MessageService } from './services/message.service';
     PrismaService,
     EventService,
     EventParticipationService,
-    LoginService,
+    AuthService,
     RatingService,
-    MessageService
+    MessageService,
+    JwtStrategy,
+    ConfigService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor
+    }
   ]
 })
 export class AppModule {}

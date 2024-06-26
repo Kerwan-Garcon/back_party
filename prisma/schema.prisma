@@ -18,8 +18,7 @@ model User {
   email            String               @unique
   password         String
   name             String
-  region           String
-  city             String
+  locationId       Int
   age              Int
   interests        String[]
   isOrganizer      Boolean              @default(false)
@@ -31,15 +30,15 @@ model User {
   messagesReceived Message[]            @relation("ReceiverMessages")
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
+  location         Location             @relation(fields: [locationId], references: [id])
 
   @@index([email])
-  @@index([region, city])
+  @@index([locationId])
 }
 
 model Event {
   id               Int                  @id @default(autoincrement())
   name             String
-  location         String
   type             EventType
   date             DateTime
   time             DateTime
@@ -52,6 +51,7 @@ model Event {
   bringGames       Boolean              @default(false)
   bringEquipment   Boolean              @default(false)
   equipmentDetails String?
+  drinksDetails    String?
   organizerId      Int
   organizer        User                 @relation("OrganizerEvents", fields: [organizerId], references: [id])
   participants     EventParticipation[]
@@ -59,11 +59,13 @@ model Event {
   games            Game[]
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
+  location         Location?            @relation(fields: [locationId], references: [id])
+  locationId       Int?
 
-  @@index([location])
   @@index([type])
   @@index([date])
   @@index([organizerId])
+  @@index([locationId])
 }
 
 model EventParticipation {
@@ -110,6 +112,21 @@ model Message {
   @@index([senderId])
   @@index([receiverId])
   @@index([eventId])
+}
+
+model Location {
+  id      Int     @id @default(autoincrement())
+  address String
+  city    String
+  region  String
+  country String
+  zipCode String
+  events  Event[]
+  User    User[]
+
+  @@index([city])
+  @@index([region])
+  @@index([country])
 }
 
 model Game {

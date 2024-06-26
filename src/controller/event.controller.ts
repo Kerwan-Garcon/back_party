@@ -6,7 +6,8 @@ import {
   Param,
   Put,
   Delete,
-  BadRequestException
+  BadRequestException,
+  Query
 } from '@nestjs/common';
 import { Prisma, Event } from '@prisma/client';
 import { EventService } from 'src/services/event.service';
@@ -33,8 +34,13 @@ export class EventController {
   }
 
   @Get()
-  async getEvents(): Promise<Event[]> {
-    return this.eventService.getEvents();
+  async getEvents(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10'
+  ): Promise<{ data: Event[]; total: number; page: number; limit: number }> {
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    return this.eventService.getEvents(pageNumber, limitNumber);
   }
 
   @Get(':id')

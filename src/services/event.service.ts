@@ -10,24 +10,26 @@ export class EventService {
     return this.prisma.event.create({ data });
   }
 
-  async createEventWithGames(data: Prisma.EventCreateInput): Promise<Event> {
+  async createEventWithGames(data: any): Promise<Event> {
     return this.prisma.$transaction(async (prisma) => {
-      const gamesData = data.games;
-      delete data.games;
+      const { location, games, organizerId, ...eventData } = data;
+
+      const createdLocation = await prisma.location.create({
+        data: location
+      });
 
       const event = await prisma.event.create({
         data: {
-          ...data,
+          ...eventData,
           games: {
-            create: Array.isArray(gamesData)
-              ? gamesData.map((game) => ({
-                  name: game.name
-                }))
-              : undefined
+            create: games
+          },
+          location: {
+            connect: { id: createdLocation.id }
+          },
+          organizer: {
+            connect: { id: organizerId }
           }
-        },
-        include: {
-          games: true
         }
       });
 
@@ -35,12 +37,35 @@ export class EventService {
     });
   }
 
-  async getEvents(): Promise<Event[]> {
-    return this.prisma.event.findMany({ include: { games: true } });
+  async getEvents(
+    page: number,
+    limit: number
+  ): Promise<{ data: Event[]; total: number; page: number; limit: number }> {
+    const skip = (page - 1) * limit;
+    const total = await this.prisma.event.count();
+    const data = await this.prisma.event.findMany({
+      skip: skip,
+      take: limit,
+      include: {
+        games: true,
+        organizer: true,
+        location: true
+      }
+    });
+
+    return {
+      data: data,
+      total: total,
+      page: page,
+      limit: limit
+    };
   }
 
   async getEventById(id: number): Promise<Event | null> {
-    return this.prisma.event.findUnique({ where: { id } });
+    return this.prisma.event.findUnique({
+      where: { id },
+      include: { games: true, organizer: true, location: true }
+    });
   }
 
   async updateEvent(id: number, data: Prisma.EventUpdateInput): Promise<Event> {
