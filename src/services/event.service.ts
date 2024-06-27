@@ -18,6 +18,7 @@ export class EventService {
         data: location
       });
 
+      // a revoir un jour
       const event = await prisma.event.create({
         data: {
           ...eventData,
@@ -49,7 +50,13 @@ export class EventService {
       include: {
         games: true,
         organizer: true,
-        location: true
+        location: true,
+        participants: {
+          include: {
+            user: true,
+            event: true
+          }
+        }
       }
     });
 
@@ -64,7 +71,12 @@ export class EventService {
   async getEventById(id: number): Promise<Event | null> {
     return this.prisma.event.findUnique({
       where: { id },
-      include: { games: true, organizer: true, location: true }
+      include: {
+        games: true,
+        organizer: true,
+        location: true,
+        participants: true
+      }
     });
   }
 
@@ -86,7 +98,18 @@ export class EventService {
 
   async getEventsByUserId(id: number): Promise<Event[]> {
     return this.prisma.event.findMany({
-      where: { id }
+      where: { organizerId: id },
+      include: {
+        games: true,
+        organizer: true,
+        location: true,
+        participants: {
+          include: {
+            user: true,
+            event: true
+          }
+        }
+      }
     });
   }
 }

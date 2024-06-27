@@ -6,18 +6,19 @@ import {
   Param,
   Put,
   Delete,
-  BadRequestException
+  BadRequestException,
+  Query
 } from '@nestjs/common';
 import { Prisma, EventParticipation } from '@prisma/client';
 import { EventParticipationService } from 'src/services/eventParticipation.service';
 
-@Controller('eventParticipations')
+@Controller('events')
 export class EventParticipationController {
   constructor(
     private readonly eventParticipationService: EventParticipationService
   ) {}
 
-  @Post()
+  @Post('participations')
   async createEventParticipation(
     @Body() data: Prisma.EventParticipationCreateInput
   ): Promise<EventParticipation> {
@@ -32,16 +33,20 @@ export class EventParticipationController {
     }
   }
 
-  @Get()
+  @Get('participations')
   async getEventParticipations(): Promise<EventParticipation[]> {
     return this.eventParticipationService.getEventParticipations();
   }
 
-  @Get(':id')
+  @Get(':id/participations')
   async getEventParticipationById(
-    @Param('id') id: string
+    @Param('id') id: string,
+    @Query('userId') userId: string
   ): Promise<EventParticipation> {
-    return this.eventParticipationService.getEventParticipationById(+id);
+    return this.eventParticipationService.getEventParticipationByEventUserId(
+      +id,
+      +userId
+    );
   }
 
   @Get('user/:id')
@@ -51,16 +56,26 @@ export class EventParticipationController {
     return this.eventParticipationService.getEventParticipationByUserId(+id);
   }
 
-  @Put(':id')
+  @Put(':id/participations')
   async updateEventParticipation(
     @Param('id') id: string,
+    @Query('userId') userId: string,
     @Body() data: Prisma.EventParticipationUpdateInput
-  ): Promise<EventParticipation> {
-    return this.eventParticipationService.updateEventParticipation(+id, data);
+  ): Promise<Prisma.BatchPayload> {
+    return this.eventParticipationService.updateEventParticipation(
+      { eventId: +id, userId: +userId },
+      data
+    );
   }
 
-  @Delete(':id')
-  async deleteEventParticipation(@Param('id') id: string) {
-    return this.eventParticipationService.deleteEventParticipation(+id);
+  @Delete(':eventId/participations')
+  async deleteEventParticipation(
+    @Param('eventId') id: string,
+    @Query('userId') userId: string
+  ) {
+    return this.eventParticipationService.deleteEventParticipation(
+      +id,
+      +userId
+    );
   }
 }
