@@ -186,6 +186,8 @@ export class UserService {
 
 L'indexation améliore les performances de recherche dans la base de données. Prisma permet d'ajouter facilement des index via le schéma Prisma.
 
+Les index ont été mis sur toutes les colonnes suceptible d'être utilisé pour la recherche ou etc.. mais il est possible que la fonction n'existe pas encore.
+
 ### Exemple d'indexation dans schema.prisma :
 
 ```ts
