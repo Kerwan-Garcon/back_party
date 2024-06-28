@@ -12,11 +12,5 @@
             "dest": "src/main.ts",
             "methods": ["GET","POST","PUT","DELETE"]
         }
-    ],
-    "build": {
-        "env": {
-          "PRISMA_QUERY_ENGINE_BINARY": "./node_modules/.bin/query-engine"
-        },
-        "postinstall": "prisma generate"
-      }
+    ]
 }
