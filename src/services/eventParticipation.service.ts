@@ -54,7 +54,9 @@ export class EventParticipationService {
     return this.prisma.$transaction(async (prisma) => {
       const eventParticipation = await prisma.eventParticipation.updateMany({
         where: { eventId, userId },
-        data
+        data: {
+          status: data.status
+        }
       });
 
       if ((data.status as ParticipationStatus) === 'APPROVED') {

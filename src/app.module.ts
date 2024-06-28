@@ -37,7 +37,7 @@ import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
       isGlobal: true
     }),
     CacheModule.register({
-      ttl: 10000,
+      ttl: 2000,
       max: 20
     })
   ],

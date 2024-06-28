@@ -62,7 +62,13 @@ export class EventController {
   }
 
   @Get('user/:id')
-  async getEventsByUserId(@Param('id') id: string): Promise<Event[]> {
-    return this.eventService.getEventsByUserId(+id);
+  async getEventsByUserId(
+    @Param('id') id: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10'
+  ): Promise<{ data: Event[]; total: number; page: number; limit: number }> {
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    return this.eventService.getEventsByUserId(+id, pageNumber, limitNumber);
   }
 }

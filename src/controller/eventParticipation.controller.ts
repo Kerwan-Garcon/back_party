@@ -33,7 +33,7 @@ export class EventParticipationController {
     }
   }
 
-  @Get('participations')
+  @Get('participations/all')
   async getEventParticipations(): Promise<EventParticipation[]> {
     return this.eventParticipationService.getEventParticipations();
   }
