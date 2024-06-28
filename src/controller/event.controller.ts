@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Prisma, Event } from '@prisma/client';
-import { EventService } from 'src/services/event.service';
+import { EventService } from '../services/event.service';
 
 @ApiTags('events')
 @Controller('events')

@@ -5,10 +5,10 @@ import {
   UnauthorizedException,
   BadRequestException
 } from '@nestjs/common';
-import { AuthService } from 'src/services/auth.service';
-import { LoginDto } from 'src/dto/login.dto';
-import { RegisterDto } from 'src/dto/register.dto';
-import { Public } from 'src/decorators/public.decorators';
+import { AuthService } from '../services/auth.service';
+import { LoginDto } from '../dto/login.dto';
+import { RegisterDto } from '../dto/register.dto';
+import { Public } from '../decorators/public.decorators';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('auth')

@@ -15,7 +15,7 @@ import {
   ApiTags
 } from '@nestjs/swagger';
 import { Prisma, Message } from '@prisma/client';
-import { MessageService } from 'src/services/message.service';
+import { MessageService } from '../services/message.service';
 
 @ApiTags('messages')
 @Controller('messages')

@@ -10,7 +10,7 @@ import {
   Query
 } from '@nestjs/common';
 import { Prisma, EventParticipation } from '@prisma/client';
-import { EventParticipationService } from 'src/services/eventParticipation.service';
+import { EventParticipationService } from '../services/eventParticipation.service';
 import {
   ApiBody,
   ApiOperation,

@@ -15,7 +15,7 @@ import {
   ApiTags
 } from '@nestjs/swagger';
 import { Prisma, UserRating } from '@prisma/client';
-import { RatingService } from 'src/services/rating.service';
+import { RatingService } from '../services/rating.service';
 
 @ApiTags('ratings')
 @Controller('ratings')
