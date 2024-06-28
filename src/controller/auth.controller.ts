@@ -9,13 +9,18 @@ import { AuthService } from 'src/services/auth.service';
 import { LoginDto } from 'src/dto/login.dto';
 import { RegisterDto } from 'src/dto/register.dto';
 import { Public } from 'src/decorators/public.decorators';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  //   @UseGuards(AuthGuard('local'))
+  @ApiOperation({ summary: 'User login' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: 'User successfully logged in' })
+  @ApiResponse({ status: 401, description: 'Invalid email or password' })
   @Post('login')
   async login(@Body() data: LoginDto) {
     const user = await this.authService.validateUser(data.email, data.password);
@@ -28,6 +33,10 @@ export class AuthController {
   }
 
   @Public()
+  @ApiOperation({ summary: 'User registration' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 200, description: 'User successfully registered' })
+  @ApiResponse({ status: 400, description: 'Registration failed' })
   @Post('register')
   async register(@Body() data: RegisterDto) {
     const user = await this.authService.register(data);

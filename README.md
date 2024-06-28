@@ -1,73 +1,211 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Optimisation des données
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Introduction
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Ce document explique comment gérer les opérations de fetch batch, cache, pagination, et indexation des données en utilisant NestJS et Prisma. Ces pratiques sont essentielles pour optimiser les performances et la réactivité de votre application.
 
-## Description
+## Prérequis
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [Node.js](https://nodejs.org/) et [npm](https://www.npmjs.com/)
+- [NestJS](https://nestjs.com/)
+- [Prisma](https://www.prisma.io/)
 
 ## Installation
 
-```bash
-$ pnpm install
-```
-
-## Running the app
+Installez les dépendances nécessaires :
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+npm install @nestjs/common @nestjs/core @nestjs/platform-express @nestjs/typeorm @prisma/client prisma
 ```
 
-## Test
+## Accéder a l'application
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+npm run start
 ```
 
-## Support
+## Swagger
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+🪧 baseurl/api pour accéder à swagger
 
-## Stay in touch
+## Configuration de Prisma
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Configurez votre schéma Prisma (schema.prisma) pour inclure vos modèles. Par exemple :
 
-## License
+```ts
+model User {
+id Int @id @default(autoincrement())
+name String
+ratingsGiven UserRating[] @relation("UserRatingsGiven")
+ratingsReceived UserRating[] @relation("UserRatingsReceived")
+}
 
-Nest is [MIT licensed](LICENSE).
+model UserRating {
+id Int @id @default(autoincrement())
+rating Int
+comment String
+raterId Int
+ratedId Int
+createdAt DateTime @default(now())
+
+rater User @relation("UserRatingsGiven", fields: [raterId], references: [id])
+rated User @relation("UserRatingsReceived", fields: [ratedId], references: [id])
+
+@@unique([raterId, ratedId])
+@@index([raterId])
+@@index([ratedId])
+}
+
+```
+
+## Fetch Batch
+
+Le fetch batch permet de réduire le nombre de requêtes en regroupant plusieurs fetch en une seule opération. NestJS et Prisma facilitent cela via les @PrismaClient et les requêtes relationnelles.
+
+### Exemple de fetch batch :
+
+```ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+
+@Injectable()
+export class UserService {
+  constructor(private prisma: PrismaService) {}
+
+  async getUsersWithRatings() {
+    return this.prisma.user.findMany({
+      // include pour fusionner deux autre req 'select' en fonction des element passées.
+      include: {
+        ratingsGiven: true,
+        ratingsReceived: true
+      }
+    });
+  }
+}
+```
+
+## Cache
+
+Le cache améliore les performances en stockant les résultats fréquemment demandés. Utilisez des bibliothèques comme cache-manager avec NestJS.
+
+### Installation de cache-manager :
+
+```bash
+npm install cache-manager
+```
+
+### Configuration du cache :
+
+```ts
+import { Module, CacheModule } from '@nestjs/common';
+import { UserService } from './user.service';
+
+@Module({
+  imports: [
+    CacheModule.register({
+      ttl: 60, // seconds
+      max: 100 // maximum number of items in cache
+    })
+  ],
+  providers: [UserService]
+})
+export class UserModule {}
+```
+
+### Utilisation du cache dans un service :
+
+```ts
+import { Injectable, Cacheable } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+
+@Injectable()
+export class UserService {
+  constructor(private prisma: PrismaService) {}
+
+  @Cacheable()
+  async getUser(userId: number) {
+    return this.prisma.user.findUnique({
+      where: { id: userId }
+    });
+  }
+}
+```
+
+### Activer le cache globalement
+
+```ts
+{
+  provide: APP_INTERCEPTOR,
+  useClass: CacheInterceptor,
+}
+```
+
+## Pagination
+
+La pagination permet de diviser les résultats en pages. Utilisez Prisma pour ajouter des arguments de pagination à vos requêtes.
+
+### Exemple de pagination :
+
+```ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+
+@Injectable()
+export class UserService {
+  constructor(private prisma: PrismaService) {}
+
+  async getUsers(
+    page: number,
+    limit: number
+  ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+    const skip = (page - 1) * limit;
+    const total = await this.prisma.event.count();
+    const data = await this.prisma.user.findMany({
+      skip: skip,
+      take: limit,
+      include: {
+        messagesSent: true,
+        messagesReceived: true,
+        location: true,
+        events: true,
+        ratingsReceived: true
+      }
+    });
+
+    return {
+      data: data,
+      total: total,
+      page: page,
+      limit: limit
+    };
+  }
+}
+```
+
+## Indexation
+
+L'indexation améliore les performances de recherche dans la base de données. Prisma permet d'ajouter facilement des index via le schéma Prisma.
+
+### Exemple d'indexation dans schema.prisma :
+
+```ts
+model UserRating {
+id Int @id @default(autoincrement())
+rating Int
+comment String
+raterId Int
+ratedId Int
+createdAt DateTime @default(now())
+
+rater User @relation("UserRatingsGiven", fields: [raterId], references: [id])
+rated User @relation("UserRatingsReceived", fields: [ratedId], references: [id])
+
+@@unique([raterId, ratedId])
+@@index([raterId])
+@@index([ratedId])
+}
+```
+
+## Conclusion
+
+En suivant ces pratiques, vous pouvez optimiser les performances et la réactivité de votre application en utilisant NestJS et Prisma. Le fetch batch, le cache, la pagination et l'indexation sont des techniques essentielles pour gérer efficacement les données dans votre application.

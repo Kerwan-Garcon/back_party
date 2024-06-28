@@ -24,10 +24,30 @@ export class UsersService {
     });
   }
 
-  async getUsers(): Promise<User[]> {
-    return this.prisma.user.findMany({
-      include: { messagesSent: true, messagesReceived: true, location: true }
+  async getUsers(
+    page: number,
+    limit: number
+  ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+    const skip = (page - 1) * limit;
+    const total = await this.prisma.event.count();
+    const data = await this.prisma.user.findMany({
+      skip: skip,
+      take: limit,
+      include: {
+        messagesSent: true,
+        messagesReceived: true,
+        location: true,
+        events: true,
+        ratingsReceived: true
+      }
     });
+
+    return {
+      data: data,
+      total: total,
+      page: page,
+      limit: limit
+    };
   }
 
   async updateUser(id: number, data: Prisma.UserUpdateInput): Promise<User> {
