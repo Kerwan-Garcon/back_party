@@ -6,7 +6,7 @@ import * as dotenv from 'dotenv';
 async function bootstrap() {
   dotenv.config();
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+  app.enableCors({ allowedHeaders: '*', origin: '*', credentials: true });
   const config = new DocumentBuilder()
     .setTitle('PARTY')
     .setDescription('The PARTY API description')
